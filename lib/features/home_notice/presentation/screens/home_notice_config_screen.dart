@@ -44,7 +44,7 @@ class _HomeNoticeConfigScreenState extends State<HomeNoticeConfigScreen> {
 
   Future<void> _fetchCurrentNotice() async {
     try {
-      final doc = await _firestore.collection('app_settings').doc('home_notice').get();
+      final doc = await _firestore.collection('app_config').doc('home_notice').get();
       if (doc.exists) {
         final data = doc.data();
         if (data != null) {
@@ -126,7 +126,7 @@ class _HomeNoticeConfigScreenState extends State<HomeNoticeConfigScreen> {
     });
 
     try {
-      await _firestore.collection('app_settings').doc('home_notice').set({
+      await _firestore.collection('app_config').doc('home_notice').set({
         'isActive': _isActive,
         'noticeText': _noticeController.text.trim(),
         'imageUrl': _imageUrl,
@@ -153,17 +153,23 @@ class _HomeNoticeConfigScreenState extends State<HomeNoticeConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // No Scaffold — lives inside AdminShell. All Firestore operations preserved.
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Home Notice')),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
     }
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Home Notice')),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // Active Toggle
               Container(
                 decoration: BoxDecoration(
@@ -239,6 +245,7 @@ class _HomeNoticeConfigScreenState extends State<HomeNoticeConfigScreen> {
             child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
           ),
       ],
+      ),
     );
   }
 
@@ -340,15 +347,12 @@ class _HomeNoticeConfigScreenState extends State<HomeNoticeConfigScreen> {
 
 class _DashedBorderPainter extends CustomPainter {
   final Color color;
-  final double strokeWidth;
-  final double gap;
-  final double radius;
+  final double strokeWidth = 2.0;
+  final double gap = 5.0;
+  final double radius = 16.0;
 
   _DashedBorderPainter({
     required this.color,
-    this.strokeWidth = 2.0,
-    this.gap = 5.0,
-    this.radius = 16.0,
   });
 
   @override

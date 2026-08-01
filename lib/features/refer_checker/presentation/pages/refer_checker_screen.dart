@@ -54,60 +54,66 @@ class _ReferCheckerViewState extends State<_ReferCheckerView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Search bar ───────────────────────────────────────────────────────
-        Container(
-          color: AppColors.surface,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: TextField(
-            controller: _searchController,
-            style: const TextStyle(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Email, Phone, or Refer Code…',
-              prefixIcon: const Icon(Icons.search_rounded, size: 18),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-                onPressed: _onSearch,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Refer Checker'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Search bar ───────────────────────────────────────────────────────
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Email, Phone, or Refer Code…',
+                prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
+                  onPressed: _onSearch,
+                ),
               ),
+              onSubmitted: (_) => _onSearch(),
             ),
-            onSubmitted: (_) => _onSearch(),
           ),
-        ),
-        // ── Content ──────────────────────────────────────────────────────────
-        Expanded(
-          child: BlocBuilder<ReferCheckerBloc, ReferCheckerState>(
-            builder: (context, state) {
-              if (state.isLoading) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-              }
-              if (state.hasSearched && state.masterUser == null) {
+          // ── Content ──────────────────────────────────────────────────────────
+          Expanded(
+            child: BlocBuilder<ReferCheckerBloc, ReferCheckerState>(
+              builder: (context, state) {
+                if (state.isLoading) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+                if (state.hasSearched && state.masterUser == null) {
+                  return Center(
+                    child: Text(
+                      state.errorMessage.isNotEmpty ? state.errorMessage : 'কোনো ইউজার খুঁজে পাওয়া যায়নি',
+                      style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                    ),
+                  );
+                }
+                if (state.masterUser != null) {
+                  return _buildResults(state);
+                }
                 return Center(
-                  child: Text(
-                    state.errorMessage.isNotEmpty ? state.errorMessage : 'কোনো ইউজার খুঁজে পাওয়া যায়নি',
-                    style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.manage_search_rounded, size: 64, color: AppColors.border),
+                      const SizedBox(height: AppSpacing.md),
+                      Text('Search for a user to view their referral tree.',
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                    ],
                   ),
                 );
-              }
-              if (state.masterUser != null) {
-                return _buildResults(state);
-              }
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.manage_search_rounded, size: 64, color: AppColors.border),
-                    const SizedBox(height: AppSpacing.md),
-                    Text('Search for a user to view their referral tree.',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                  ],
-                ),
-              );
-            },
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

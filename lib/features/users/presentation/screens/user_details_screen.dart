@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../bloc/user_management_bloc.dart';
@@ -20,21 +21,37 @@ class UserDetailsScreen extends StatefulWidget {
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   late UserModel _user;
   late String _subscriptionStatus;
+  late String _accountStatus;
   
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for Credentials
+  // Controllers for Personal Details & Credentials
+  late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
   late TextEditingController _emailCtrl;
+  late TextEditingController _bioCtrl;
+  late TextEditingController _dobCtrl;
   late TextEditingController _referCodeCtrl;
   late TextEditingController _referredByCtrl;
 
   // Controllers for Balances
   late TextEditingController _totalCtrl;
   late TextEditingController _earningCtrl;
+  late TextEditingController _rechargeCtrl;
   late TextEditingController _referralCtrl;
   late TextEditingController _voucherCtrl;
   late TextEditingController _withdrawnCtrl;
+
+  // Controllers / Flags for Status & Flags
+  late TextEditingController _rankCountCtrl;
+  late TextEditingController _deviceInfoCtrl;
+  late TextEditingController _fcmTokenCtrl;
+  late bool _isActive;
+  late bool _isBlocked;
+  late bool _isSuspended;
+  late bool _bonusDistributed;
+  late bool _hasWithdrawnBefore;
+  late bool _verificationBannerShown;
 
   @override
   void initState() {
@@ -43,74 +60,146 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     _initControllers();
   }
 
-  void _initControllers() {
-    // _toDropdownSafeValue maps 'approved' → 'plan_320' so the dropdown
-    // never receives a value that has no matching DropdownMenuItem.
-    _subscriptionStatus = _toDropdownSafeValue(_user.subscriptionStatus);
+  String _formatDateOfBirth(String raw) {
+    if (raw.isEmpty) return '';
+    // Handle serialized Timestamp string e.g. Timestamp(seconds=1125633600, nanoseconds=0)
+    if (raw.contains('Timestamp') && raw.contains('seconds=')) {
+      try {
+        final match = RegExp(r'seconds=(\d+)').firstMatch(raw);
+        if (match != null) {
+          final sec = int.parse(match.group(1)!);
+          final dt = DateTime.fromMillisecondsSinceEpoch(sec * 1000);
+          return DateFormat('d MMMM yyyy').format(dt);
+        }
+      } catch (_) {}
+    }
+    final dt = DateTime.tryParse(raw);
+    if (dt != null) {
+      return DateFormat('d MMMM yyyy').format(dt);
+    }
+    return raw;
+  }
 
+  void _initControllers() {
+    _subscriptionStatus = _toDropdownSafeValue(_user.subscriptionStatus);
+    _accountStatus = _toAccountStatusSafeValue(_user.status);
+
+    _nameCtrl = TextEditingController(text: _user.name);
     _phoneCtrl = TextEditingController(text: _user.phone);
     _emailCtrl = TextEditingController(text: _user.email);
+    _bioCtrl = TextEditingController(text: _user.bio);
+    _dobCtrl = TextEditingController(text: _formatDateOfBirth(_user.dateOfBirth));
     _referCodeCtrl = TextEditingController(text: _user.referCode);
     _referredByCtrl = TextEditingController(text: _user.referredBy);
 
-    _totalCtrl = TextEditingController(text: _user.balance['total']?.toString() ?? '0');
-    _earningCtrl = TextEditingController(text: _user.balance['earning']?.toString() ?? '0');
-    _referralCtrl = TextEditingController(text: _user.balance['referral']?.toString() ?? '0');
-    _voucherCtrl = TextEditingController(text: _user.balance['voucher']?.toString() ?? '0');
-    _withdrawnCtrl = TextEditingController(text: _user.balance['withdrawn']?.toString() ?? '0');
+    final bal = _user.balance;
+    _totalCtrl = TextEditingController(text: bal['total']?.toString() ?? '0');
+    _earningCtrl = TextEditingController(text: bal['earning']?.toString() ?? '0');
+    _rechargeCtrl = TextEditingController(text: (bal['recharge_balance'] ?? bal['recharge'])?.toString() ?? '0');
+    _referralCtrl = TextEditingController(text: bal['referral']?.toString() ?? '0');
+    _voucherCtrl = TextEditingController(text: bal['voucher']?.toString() ?? '0');
+    _withdrawnCtrl = TextEditingController(text: bal['withdrawn']?.toString() ?? '0');
+
+    _rankCountCtrl = TextEditingController(text: _user.rankCount?.toString() ?? '0');
+    _deviceInfoCtrl = TextEditingController(text: _user.deviceInfo);
+    _fcmTokenCtrl = TextEditingController(text: _user.fcmToken);
+
+    _isActive = _user.isActive;
+    _isBlocked = _user.isBlocked;
+    _isSuspended = _user.isSuspended;
+    _bonusDistributed = _user.bonusDistributed;
+    _hasWithdrawnBefore = _user.hasWithdrawnBefore;
+    _verificationBannerShown = _user.verificationBannerShown;
   }
 
-  // Converts any raw Firestore subscriptionStatus into one of the three values
-  // the dropdown knows about: 'none', 'plan_250', or 'plan_320'.
-  // Legacy 'approved' users are displayed as 'plan_320' (৳320 Premium).
   String _toDropdownSafeValue(String? raw) {
     final s = (raw ?? 'none').toLowerCase().trim();
-    if (s == 'plan_320' || s == 'approved') return 'plan_320';
-    if (s == 'plan_250') return 'plan_250';
+    if (s == 'plan_320' || s == 'approved' || s == 'verified') return 'plan_320';
     return 'none';
+  }
+
+  String _toAccountStatusSafeValue(String? raw) {
+    final s = (raw ?? 'active').toLowerCase().trim();
+    if (s == 'blocked' || s == 'suspended' || s == 'inactive') return s;
+    return 'active';
   }
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
+    _bioCtrl.dispose();
+    _dobCtrl.dispose();
     _referCodeCtrl.dispose();
     _referredByCtrl.dispose();
+
     _totalCtrl.dispose();
     _earningCtrl.dispose();
+    _rechargeCtrl.dispose();
     _referralCtrl.dispose();
     _voucherCtrl.dispose();
     _withdrawnCtrl.dispose();
+
+    _rankCountCtrl.dispose();
+    _deviceInfoCtrl.dispose();
+    _fcmTokenCtrl.dispose();
     super.dispose();
   }
 
   void _saveProfile() {
     if (_formKey.currentState!.validate()) {
       final updatedBalance = {
-        'total': num.tryParse(_totalCtrl.text) ?? 0,
+        'total': num.tryParse(_totalCtrl.text) ?? (_user.balance['total'] ?? 0),
         'earning': num.tryParse(_earningCtrl.text) ?? 0,
+        'recharge_balance': num.tryParse(_rechargeCtrl.text) ?? 0,
         'referral': num.tryParse(_referralCtrl.text) ?? 0,
         'voucher': num.tryParse(_voucherCtrl.text) ?? 0,
         'withdrawn': num.tryParse(_withdrawnCtrl.text) ?? 0,
       };
 
       final updatedUser = _user.copyWith(
+        name: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
+        bio: _bioCtrl.text.trim(),
+        dateOfBirth: _dobCtrl.text.trim(),
         referCode: _referCodeCtrl.text.trim(),
         referredBy: _referredByCtrl.text.trim(),
         subscriptionStatus: _subscriptionStatus,
         balance: updatedBalance,
+        status: _accountStatus,
+        isActive: _isActive,
+        isBlocked: _isBlocked,
+        isSuspended: _isSuspended,
+        deviceInfo: _deviceInfoCtrl.text.trim(),
+        rankCount: num.tryParse(_rankCountCtrl.text) ?? 0,
+        bonusDistributed: _bonusDistributed,
+        hasWithdrawnBefore: _hasWithdrawnBefore,
+        verificationBannerShown: _verificationBannerShown,
+        fcmToken: _fcmTokenCtrl.text.trim(),
       );
 
       context.read<UserManagementBloc>().add(UpdateUserEvent(updatedUser));
     }
   }
 
+  void _copyToClipboard(String text, String label) {
+    if (text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard!'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF00CED1),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Light mode background
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('User Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF00CED1),
@@ -119,6 +208,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_forever, color: Colors.white),
+            tooltip: 'Delete User',
             onPressed: () => _showDeleteConfirmation(context, _user.id, _user.name, isMainProfile: true),
           ),
         ],
@@ -132,14 +222,14 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             setState(() {
               _user = state.updatedUser;
               _subscriptionStatus = _toDropdownSafeValue(_user.subscriptionStatus);
+              _accountStatus = _toAccountStatusSafeValue(_user.status);
             });
           } else if (state is UserUpdateFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Update failed: ${state.message}'), backgroundColor: Colors.red),
             );
           } else if (state is UserDeletionSuccess) {
-            Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading dialog
-            
+            Navigator.of(context, rootNavigator: true).pop();
             if (state.isMainProfile) {
               Navigator.of(context).popUntil((route) => route.isFirst);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -161,7 +251,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 48.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -169,30 +259,45 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 children: [
                   _buildProfileHeader(),
                   const SizedBox(height: 24),
-                  
-                  _buildSectionTitle('Subscription Management'),
+
+                  _buildSectionTitle('Plan / Verification Status'),
                   const SizedBox(height: 12),
                   _buildSubscriptionSelector(),
                   const SizedBox(height: 24),
-                  
-                  _buildSectionTitle('Credentials'),
+
+                  _buildSectionTitle('Personal Details'),
                   const SizedBox(height: 12),
-                  _buildCredentialsGrid(),
+                  _buildPersonalDetailsGrid(),
                   const SizedBox(height: 24),
-                  
-                  _buildSectionTitle('Financial Balance'),
+
+                  _buildSectionTitle('Referral Information'),
+                  const SizedBox(height: 12),
+                  _buildReferralGrid(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('Financial Balances'),
                   const SizedBox(height: 12),
                   _buildBalanceGrid(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('Account Status & Flags'),
+                  const SizedBox(height: 12),
+                  _buildStatusAndFlagsSection(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('Raw Document Fields'),
+                  const SizedBox(height: 12),
+                  _buildRawDocumentCard(),
                   const SizedBox(height: 32),
-                  
+
                   _buildSaveButton(),
-                  const SizedBox(height: 40),
-                  
-                  _buildSectionTitle('Additional Information'),
+                  const SizedBox(height: 32),
+
+                  _buildSectionTitle('Additional Information & Actions'),
                   const SizedBox(height: 12),
                   _buildNavigationButtons(),
-                  
-                  const SizedBox(height: 40),
+
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -203,6 +308,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildProfileHeader() {
+    final bool isUserVerified = _user.isVerified;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -210,44 +317,140 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, spreadRadius: 1),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, spreadRadius: 1),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [Color(0xFF00CED1), Colors.blue]),
-            ),
-            child: CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.grey[200],
-              backgroundImage: _user.profileImageUrl.isNotEmpty ? NetworkImage(_user.profileImageUrl) : null,
-              child: _user.profileImageUrl.isEmpty ? Icon(Icons.person, size: 40, color: Colors.grey[400]) : null,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: isUserVerified 
+                        ? [const Color(0xFF00CED1), const Color(0xFF00E676)]
+                        : [Colors.grey[400]!, Colors.grey[600]!],
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: _user.profileImageUrl.isNotEmpty ? NetworkImage(_user.profileImageUrl) : null,
+                  child: _user.profileImageUrl.isEmpty ? Icon(Icons.person, size: 36, color: Colors.grey[400]) : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _user.name.isNotEmpty ? _user.name : 'Unnamed User',
+                      style: TextStyle(color: Colors.grey[900], fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildStatusBadge(),
+                    const SizedBox(height: 6),
+                    Text(
+                      _user.joinedAt != null 
+                          ? 'Joined: ${DateFormat('MMM dd, yyyy  hh:mm a').format(_user.joinedAt!)}' 
+                          : 'Joined: N/A',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                    if (_user.lastLoginAt != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Last Login: ${DateFormat('MMM dd, yyyy  hh:mm a').format(_user.lastLoginAt!)}',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _user.name.isNotEmpty ? _user.name : 'Unknown User',
-                  style: TextStyle(color: Colors.grey[900], fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                _buildStatusBadge(),
-                const SizedBox(height: 8),
-                Text(
-                  _user.joinedAt != null 
-                      ? 'Joined: ${DateFormat('MMM dd, yyyy').format(_user.joinedAt!)}' 
-                      : 'Joined: N/A',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
+          if (_user.bio.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(10),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.format_quote, size: 18, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _user.bio,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 13, fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _copyToClipboard(_user.id, 'User UID'),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00CED1).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF00CED1).withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.fingerprint, size: 16, color: Color(0xFF00CED1)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'UID: ${_user.id}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0097A7)),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.copy, size: 14, color: Color(0xFF00CED1)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (_user.deviceInfo.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.devices, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      Text(
+                        _user.deviceInfo,
+                        style: TextStyle(fontSize: 11, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -255,44 +458,39 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildStatusBadge() {
-    Color bgColor;
-    Color borderColor;
-    Color textColor;
-    String text;
+    final bool isUserVerified = _user.isVerified;
 
-    if (_user.subscriptionStatus == 'plan_320' || _user.subscriptionStatus == 'approved') {
-      bgColor = Colors.amber.withOpacity(0.1);
-      borderColor = Colors.amber;
-      textColor = Colors.amber[800]!;
-      text = _user.subscriptionStatus == 'approved'
-          ? '৳৩২০ ফুল প্রিমিয়াম প্ল্যান (Legacy)'
-          : '৳৩২০ ফুল প্রিমিয়াম প্ল্যান';
-    } else if (_user.subscriptionStatus == 'plan_250') {
-      bgColor = Colors.blue.withOpacity(0.1);
-      borderColor = Colors.blue;
-      textColor = Colors.blue[800]!;
-      text = '৳২৫০ বেসিক প্ল্যান';
-    } else {
-      bgColor = Colors.grey.withOpacity(0.1);
-      borderColor = Colors.grey;
-      textColor = Colors.grey[700]!;
-      text = 'Unverified / No Active Plan';
-    }
+    Color bgColor = isUserVerified ? const Color(0xFFE8F8F5) : Colors.grey.withValues(alpha: 0.12);
+    Color borderColor = isUserVerified ? const Color(0xFF00CED1) : Colors.grey;
+    Color textColor = isUserVerified ? const Color(0xFF00897B) : Colors.grey[700]!;
+    String text = isUserVerified ? 'Verified User' : 'Unverified User';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 1.2),
       ),
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isUserVerified ? Icons.check_circle : Icons.cancel_outlined,
+            size: 13,
+            color: textColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text.toUpperCase(),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -300,15 +498,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(color: Colors.grey[800], fontSize: 18, fontWeight: FontWeight.bold),
+      style: TextStyle(color: Colors.grey[800], fontSize: 16, fontWeight: FontWeight.bold),
     );
   }
 
   Widget _buildSubscriptionSelector() {
     return DropdownButtonFormField<String>(
-      value: _subscriptionStatus, // always 'none', 'plan_250', or 'plan_320'
+      initialValue: _subscriptionStatus,
       decoration: InputDecoration(
-        labelText: 'Plan Status',
+        labelText: 'Account Verification Plan',
         labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
         filled: true,
         fillColor: Colors.white,
@@ -329,24 +527,14 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       dropdownColor: Colors.white,
       style: TextStyle(color: Colors.grey[900], fontWeight: FontWeight.w600, fontSize: 14),
       icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF00CED1)),
-      items: [
+      items: const [
         DropdownMenuItem(
           value: 'none',
           child: Row(
             children: [
-              Icon(Icons.block, color: Colors.grey[600], size: 18),
-              const SizedBox(width: 8),
-              Text('Unverified / No Active Plan', style: TextStyle(color: Colors.grey[700])),
-            ],
-          ),
-        ),
-        DropdownMenuItem(
-          value: 'plan_250',
-          child: Row(
-            children: [
-              Icon(Icons.star_half, color: Colors.blue[600], size: 18),
-              const SizedBox(width: 8),
-              Text('৳২৫০ বেসিক প্ল্যান', style: TextStyle(color: Colors.blue[800])),
+              Icon(Icons.block, color: Colors.grey, size: 18),
+              SizedBox(width: 8),
+              Text('Unverified User'),
             ],
           ),
         ),
@@ -354,9 +542,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           value: 'plan_320',
           child: Row(
             children: [
-              const Icon(Icons.star, color: Colors.amber, size: 18),
-              const SizedBox(width: 8),
-              Text('৳৩২০ ফুল প্রিমিয়াম প্ল্যান', style: TextStyle(color: Colors.amber[800])),
+              Icon(Icons.verified, color: Color(0xFF00CED1), size: 18),
+              SizedBox(width: 8),
+              Text('Verified User (Plan 320)'),
             ],
           ),
         ),
@@ -371,19 +559,36 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  Widget _buildCredentialsGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 2.5,
+  Widget _buildPersonalDetailsGrid() {
+    return Column(
       children: [
-        _buildTextField('Phone', _phoneCtrl, icon: Icons.phone),
-        _buildTextField('Email', _emailCtrl, icon: Icons.email),
-        _buildTextField('Refer Code', _referCodeCtrl, icon: Icons.code),
-        _buildTextField('Referred By', _referredByCtrl, icon: Icons.person_add),
+        Row(
+          children: [
+            Expanded(child: _buildTextField('Name', _nameCtrl, icon: Icons.person)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildTextField('Phone', _phoneCtrl, icon: Icons.phone)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildTextField('Email', _emailCtrl, icon: Icons.email)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildTextField('Date of Birth', _dobCtrl, icon: Icons.cake, isRequired: false)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildTextField('Bio', _bioCtrl, icon: Icons.edit_note, isRequired: false),
+      ],
+    );
+  }
+
+  Widget _buildReferralGrid() {
+    return Row(
+      children: [
+        Expanded(child: _buildTextField('Refer Code', _referCodeCtrl, icon: Icons.qr_code)),
+        const SizedBox(width: 12),
+        Expanded(child: _buildTextField('Referred By', _referredByCtrl, icon: Icons.person_pin, isRequired: false)),
       ],
     );
   }
@@ -393,34 +598,240 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 2.5,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 2.3,
       children: [
-        _buildTextField('Total Balance', _totalCtrl, isNumber: true, icon: Icons.lock, color: Colors.grey, readOnly: true),
-        _buildTextField('Earning', _earningCtrl, isNumber: true, icon: Icons.monetization_on, color: Colors.green),
-        _buildTextField('Referral', _referralCtrl, isNumber: true, icon: Icons.group_add, color: Colors.orange),
-        _buildTextField('Voucher', _voucherCtrl, isNumber: true, icon: Icons.card_giftcard, color: Colors.purple),
-        _buildTextField('Withdrawn', _withdrawnCtrl, isNumber: true, icon: Icons.money_off, color: Colors.red),
+        _buildTextField('Total Balance', _totalCtrl, isNumber: true, icon: Icons.account_balance, color: Colors.blueGrey, readOnly: true),
+        _buildTextField('Earning Balance', _earningCtrl, isNumber: true, icon: Icons.monetization_on, color: Colors.green),
+        _buildTextField('Recharge Balance', _rechargeCtrl, isNumber: true, icon: Icons.bolt, color: Colors.teal),
+        _buildTextField('Referral Earnings', _referralCtrl, isNumber: true, icon: Icons.group_add, color: Colors.orange),
+        _buildTextField('Voucher Balance', _voucherCtrl, isNumber: true, icon: Icons.card_giftcard, color: Colors.purple),
+        _buildTextField('Total Withdrawn', _withdrawnCtrl, isNumber: true, icon: Icons.money_off, color: Colors.red),
       ],
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, IconData? icon, Color? color, bool readOnly = false}) {
+  Widget _buildStatusAndFlagsSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _accountStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Account Status',
+                    labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    prefixIcon: const Icon(Icons.shield_outlined, color: Colors.indigo, size: 18),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'active', child: Text('Active')),
+                    DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
+                    DropdownMenuItem(value: 'suspended', child: Text('Suspended')),
+                    DropdownMenuItem(value: 'inactive', child: Text('Inactive')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _accountStatus = val;
+                        if (val == 'blocked') _isBlocked = true;
+                        if (val == 'suspended') _isSuspended = true;
+                        if (val == 'active') {
+                          _isBlocked = false;
+                          _isSuspended = false;
+                          _isActive = true;
+                        }
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: _buildTextField(
+                  'Rank Count',
+                  _rankCountCtrl,
+                  isNumber: true,
+                  icon: Icons.military_tech,
+                  color: Colors.amber[800],
+                  isRequired: false,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            'Device Info',
+            _deviceInfoCtrl,
+            icon: Icons.smartphone,
+            color: Colors.blueGrey,
+            isRequired: false,
+          ),
+          const Divider(height: 24),
+          SwitchListTile(
+            title: const Text('Account Is Active', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Toggles general account activity and login access', style: TextStyle(fontSize: 12)),
+            value: _isActive,
+            activeThumbColor: const Color(0xFF00CED1),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _isActive = val),
+          ),
+          SwitchListTile(
+            title: const Text('Account Is Blocked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Block user from making requests or accessing the app', style: TextStyle(fontSize: 12)),
+            value: _isBlocked,
+            activeThumbColor: Colors.redAccent,
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _isBlocked = val),
+          ),
+          SwitchListTile(
+            title: const Text('Account Is Suspended', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Temporary suspension of user features', style: TextStyle(fontSize: 12)),
+            value: _isSuspended,
+            activeThumbColor: Colors.orange,
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _isSuspended = val),
+          ),
+          const Divider(height: 20),
+          SwitchListTile(
+            title: const Text('Bonus Distributed', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Marks if multi-generation signup bonus has been credited', style: TextStyle(fontSize: 12)),
+            value: _bonusDistributed,
+            activeThumbColor: const Color(0xFF00CED1),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _bonusDistributed = val),
+          ),
+          SwitchListTile(
+            title: const Text('First Withdrawal Done', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Tracks whether user has made at least one successful withdrawal', style: TextStyle(fontSize: 12)),
+            value: _hasWithdrawnBefore,
+            activeThumbColor: const Color(0xFF00CED1),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _hasWithdrawnBefore = val),
+          ),
+          SwitchListTile(
+            title: const Text('Verification Banner Shown', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: const Text('Tracks popup/banner notification status for the user', style: TextStyle(fontSize: 12)),
+            value: _verificationBannerShown,
+            activeThumbColor: const Color(0xFF00CED1),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (val) => setState(() => _verificationBannerShown = val),
+          ),
+          const Divider(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  'FCM Token',
+                  _fcmTokenCtrl,
+                  icon: Icons.token,
+                  color: Colors.indigo,
+                  isRequired: false,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: IconButton(
+                  icon: const Icon(Icons.copy, color: Color(0xFF00CED1)),
+                  tooltip: 'Copy FCM Token',
+                  onPressed: () => _copyToClipboard(_fcmTokenCtrl.text, 'FCM Token'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRawDocumentCard() {
+    final entries = _user.rawMap.entries.toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: const Icon(Icons.data_object, color: Color(0xFF00CED1)),
+        title: const Text('View All Raw Document Keys & Values', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        subtitle: Text('${entries.length} raw fields found in Firestore', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[50],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: entries.map((e) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(
+                        '${e.key}: ',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
+                      ),
+                      Expanded(
+                        child: SelectableText(
+                          '${e.value}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool isNumber = false,
+    IconData? icon,
+    Color? color,
+    bool readOnly = false,
+    bool isRequired = true,
+  }) {
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      style: TextStyle(color: readOnly ? Colors.grey[600] : Colors.grey[900], fontWeight: FontWeight.w600),
+      style: TextStyle(color: readOnly ? Colors.grey[600] : Colors.grey[900], fontWeight: FontWeight.w600, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
         prefixIcon: icon != null ? Icon(icon, color: color ?? Colors.grey[500], size: 18) : null,
         filled: true,
         fillColor: readOnly ? Colors.grey[100] : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -428,22 +839,29 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00CED1)),
+          borderSide: const BorderSide(color: Color(0xFF00CED1), width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Required';
-        }
-        return null;
-      },
+      validator: isRequired
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Required';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
   Widget _buildSaveButton() {
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: _saveProfile,
+      icon: const Icon(Icons.save, color: Colors.white),
+      label: const Text(
+        'SAVE & UPDATE USER PROFILE',
+        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+      ),
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
         backgroundColor: const Color(0xFF00CED1),
@@ -453,10 +871,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         ),
         elevation: 2,
       ),
-      child: const Text(
-        'SAVE & UPDATE PROFILE',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-      ),
     );
   }
 
@@ -464,24 +878,27 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     return Column(
       children: [
         _buildNavButton(
-          title: 'Check 10-Generation Referral',
+          title: '10 Generation Refer List',
+          subtitle: 'View full 10 level downline network',
           icon: Icons.account_tree,
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => UserGenerationScreen(userId: _user.id)));
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _buildNavButton(
-          title: 'Check Income History',
+          title: 'User Income History',
+          subtitle: 'View all credit / debit transactions & commissions',
           icon: Icons.history,
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => UserIncomeHistoryScreen(userId: _user.id)));
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _buildNavButton(
-          title: 'Check Micro Jobs',
-          icon: Icons.work,
+          title: 'User Micro Jobs Progress',
+          subtitle: 'Check job submissions and completion records',
+          icon: Icons.work_outline,
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => UserMicroJobsScreen(userId: _user.id)));
           },
@@ -490,24 +907,33 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  Widget _buildNavButton({required String title, required IconData icon, required VoidCallback onTap}) {
-    return ListTile(
-      onTap: onTap,
-      tileColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
-      ),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF00CED1).withOpacity(0.1),
-          shape: BoxShape.circle,
+  Widget _buildNavButton({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        onTap: onTap,
+        tileColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey[200]!),
         ),
-        child: Icon(icon, color: const Color(0xFF00CED1)),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00CED1).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: const Color(0xFF00CED1), size: 20),
+        ),
+        title: Text(title, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
       ),
-      title: Text(title, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w600)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
     );
   }
 

@@ -6,10 +6,10 @@ class VerifiedUsersSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Live real-time stream using whereIn — single indexed query covering all 3 plan statuses.
+    // Live real-time stream using whereIn — single indexed query covering verified statuses.
     final Stream<QuerySnapshot> verifiedStream = FirebaseFirestore.instance
         .collection('users')
-        .where('subscriptionStatus', whereIn: ['approved', 'plan_250', 'plan_320'])
+        .where('subscriptionStatus', whereIn: ['approved', 'plan_320'])
         .orderBy('joinedAt', descending: true)
         .snapshots();
 
@@ -44,11 +44,10 @@ class VerifiedUsersSummaryScreen extends StatelessWidget {
           final docs = snapshot.data?.docs ?? [];
 
           // ── Summary header counts ──
-          int basicCount = 0, premiumCount = 0;
+          int premiumCount = 0;
           for (final doc in docs) {
             final status = (doc['subscriptionStatus'] as String? ?? 'none').toLowerCase();
-            if (status == 'plan_250') { basicCount++; }
-            else if (status == 'plan_320' || status == 'approved') { premiumCount++; }
+            if (status == 'plan_320' || status == 'approved') { premiumCount++; }
           }
 
           return Column(
@@ -59,11 +58,9 @@ class VerifiedUsersSummaryScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Row(
                   children: [
-                    _buildStatChip('Total', docs.length.toString(), Colors.white, const Color(0xFF00CED1)),
+                    _buildStatChip('Total Verified', docs.length.toString(), Colors.white, const Color(0xFF00CED1)),
                     const SizedBox(width: 8),
-                    _buildStatChip('২৫০ টাকা ভেরিফাইড', basicCount.toString(), Colors.green[100]!, Colors.green[800]!),
-                    const SizedBox(width: 8),
-                    _buildStatChip('৩২০ টাকা ভেরিফাইড', premiumCount.toString(), Colors.amber[100]!, Colors.amber[800]!),
+                    _buildStatChip('Active Plan', premiumCount.toString(), Colors.amber[100]!, Colors.amber[800]!),
                   ],
                 ),
               ),
@@ -187,14 +184,8 @@ class VerifiedUsersSummaryScreen extends StatelessWidget {
       case 'approved':
         bg = Colors.amber[50]!;
         fg = Colors.amber[800]!;
-        label = 'Premium';
+        label = 'Verified';
         icon = Icons.star;
-        break;
-      case 'plan_250':
-        bg = Colors.blue[50]!;
-        fg = Colors.blue[800]!;
-        label = 'Basic';
-        icon = Icons.star_half;
         break;
       default:
         bg = Colors.grey[100]!;

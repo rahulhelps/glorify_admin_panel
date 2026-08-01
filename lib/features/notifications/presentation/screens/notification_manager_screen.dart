@@ -160,29 +160,34 @@ class _NotificationManagerViewState extends State<_NotificationManagerView> with
       },
       builder: (context, state) {
         final isSending = state is NotificationSending;
-        // No Scaffold — lives inside AdminShell. All Bloc events preserved.
-        return Column(
-          children: [
-            Container(
-              color: AppColors.surface,
-              child: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'সবাইকে পাঠান (Broadcast)'),
-                  Tab(text: 'নির্দিষ্ট ইউজার (Target)'),
-                ],
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: const Text('Notifications'),
+          ),
+          body: Column(
+            children: [
+              Container(
+                color: AppColors.surface,
+                child: TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: 'সবাইকে পাঠান (Broadcast)'),
+                    Tab(text: 'নির্দিষ্ট ইউজার (Target)'),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildBroadcastTab(isSending),
-                  _buildTargetTab(isSending),
-                ],
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildBroadcastTab(isSending),
+                    _buildTargetTab(isSending),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

@@ -9,20 +9,18 @@ import '../../../features/users/presentation/screens/user_details_screen.dart';
 
 // ── Section screens ───────────────────────────────────────────────────────────
 import '../../../features/dashboard/presentation/screens/dashboard_screen.dart';
-import '../../../features/subscription/presentation/screens/subscription_screen.dart';
-import '../../../features/subscription/presentation/screens/premium_verification_screen.dart';
-import '../../../features/deposit/presentation/screens/deposit_screen.dart';
-import '../../../features/withdrawal/presentation/screens/withdrawal_screen.dart';
-import '../../../features/smm_orders/presentation/screens/smm_orders_screen.dart';
-import '../../../features/smm_notices/presentation/screens/smm_notices_config_screen.dart';
-import '../../../features/micro_jobs/presentation/screens/global_micro_job_hub_screen.dart';
-import '../../../features/home_notice/presentation/screens/home_notice_config_screen.dart';
+import '../../../features/premium_verify/presentation/screens/premium_verification_screen.dart';
 import '../../../features/refer_checker/presentation/pages/refer_checker_screen.dart';
-import '../../../features/ads_views/presentation/screens/ads_view_screen.dart';
-import '../../../features/ads_views/presentation/screens/ads_view_settings_screen.dart';
+import '../../../features/withdrawal/presentation/screens/withdrawal_screen.dart';
+import '../../../features/micro_jobs/presentation/screens/global_micro_job_hub_screen.dart';
+import '../../../features/drive_offers/presentation/screens/drive_offers_screen.dart';
+import '../../../features/drive_requests/presentation/screens/drive_requests_screen.dart';
+import '../../../features/recharge_requests/presentation/screens/recharge_requests_screen.dart';
 import '../../../features/notifications/presentation/screens/notification_manager_screen.dart';
+import '../../../features/home_notice/presentation/screens/home_notice_config_screen.dart';
 import '../../../features/app_updates/presentation/screens/app_updates_management_screen.dart';
 import '../../../features/app_limits/presentation/screens/app_limits_screen.dart';
+import '../../../features/subscription/presentation/screens/subscription_screen.dart';
 
 import '../../theme/app_theme.dart';
 import 'admin_nav_item.dart';
@@ -74,40 +72,11 @@ const _kSections = <String, List<_NavDestination>>{
   ],
   'Finance': [
     _NavDestination(
-      icon: Icons.card_membership_outlined,
-      activeIcon: Icons.card_membership,
-      label: 'Subscriptions',
-      section: 'Subscriptions',
-      badgeKey: 'pendingSubscriptions',
-    ),
-    _NavDestination(
-      icon: Icons.account_balance_wallet_outlined,
-      activeIcon: Icons.account_balance_wallet,
-      label: 'Deposits',
-      section: 'Deposits',
-      badgeKey: 'pendingDeposits',
-    ),
-    _NavDestination(
       icon: Icons.money_off_outlined,
       activeIcon: Icons.money_off,
       label: 'Withdrawals',
       section: 'Withdrawals',
       badgeKey: 'pendingWithdrawals',
-    ),
-  ],
-  'SMM': [
-    _NavDestination(
-      icon: Icons.shopping_cart_outlined,
-      activeIcon: Icons.shopping_cart,
-      label: 'SMM Orders',
-      section: 'SMM Orders',
-      badgeKey: 'pendingSmmOrders',
-    ),
-    _NavDestination(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'SMM Config',
-      section: 'SMM Config',
     ),
   ],
   'Content': [
@@ -118,10 +87,24 @@ const _kSections = <String, List<_NavDestination>>{
       section: 'Micro Jobs',
     ),
     _NavDestination(
-      icon: Icons.ondemand_video_outlined,
-      activeIcon: Icons.ondemand_video,
-      label: 'Ads Views',
-      section: 'Ads Views',
+      icon: Icons.local_offer_outlined,
+      activeIcon: Icons.local_offer,
+      label: 'Drive Offers',
+      section: 'Drive Offers',
+    ),
+  ],
+  'Requests': [
+    _NavDestination(
+      icon: Icons.electrical_services_outlined,
+      activeIcon: Icons.electrical_services,
+      label: 'Drive Requests',
+      section: 'Drive Requests',
+    ),
+    _NavDestination(
+      icon: Icons.bolt_outlined,
+      activeIcon: Icons.bolt,
+      label: 'Recharge Requests',
+      section: 'Recharge Requests',
     ),
   ],
   'System': [
@@ -140,12 +123,6 @@ const _kSections = <String, List<_NavDestination>>{
       section: 'Home Notice',
     ),
     _NavDestination(
-      icon: Icons.smart_toy_outlined,
-      activeIcon: Icons.smart_toy,
-      label: 'Ads Settings',
-      section: 'Ads Settings',
-    ),
-    _NavDestination(
       icon: Icons.system_update_alt_outlined,
       activeIcon: Icons.system_update_alt,
       label: 'App Updates',
@@ -157,6 +134,12 @@ const _kSections = <String, List<_NavDestination>>{
       label: 'App Limits',
       section: 'App Limits',
     ),
+    _NavDestination(
+      icon: Icons.card_membership_outlined,
+      activeIcon: Icons.card_membership,
+      label: 'Subscription',
+      section: 'Subscription',
+    ),
   ],
 };
 
@@ -165,8 +148,8 @@ final List<_NavDestination> _kAllDestinations = [
   ..._kSections['Home']!,
   ..._kSections['Users']!,
   ..._kSections['Finance']!,
-  ..._kSections['SMM']!,
   ..._kSections['Content']!,
+  ..._kSections['Requests']!,
   ..._kSections['System']!,
   ..._kSections['Settings']!,
 ];
@@ -189,53 +172,66 @@ class AdminShellState extends State<AdminShell> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Initialise each section widget once (IndexedStack keeps them alive).
-  late final List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      const DashboardScreen(),        // 0  Dashboard
-      const PremiumVerificationScreen(), // 1 Premium Verify
-      const ReferCheckerScreen(),      // 2  Refer Checker
-      const SubscriptionScreen(),      // 3  Subscriptions
-      const DepositScreen(),           // 4  Deposits
-      const WithdrawalScreen(),        // 5  Withdrawals
-      const SmmOrdersScreen(),         // 6  SMM Orders
-      const SmmNoticesConfigScreen(),  // 7  SMM Config
-      const GlobalMicroJobHubScreen(), // 8  Micro Jobs
-      const AdsViewsScreen(),          // 9  Ads Views
-      const NotificationManagerScreen(), // 10 Notifications
-      const HomeNoticeConfigScreen(),  // 11 Home Notice
-      const AdsViewSettingsScreen(),   // 12 Ads Settings
-      const AppUpdatesManagementScreen(), // 13 App Updates
-      const AppLimitsScreen(),         // 14 App Limits
-    ];
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+  Widget _getScreenForSection(String section) {
+    switch (section) {
+      case 'Dashboard':
+        return const DashboardScreen();
+      case 'Premium Verify':
+        return const PremiumVerificationScreen();
+      case 'Refer Checker':
+        return const ReferCheckerScreen();
+      case 'Withdrawals':
+        return const WithdrawalScreen();
+      case 'Micro Jobs':
+        return const GlobalMicroJobHubScreen();
+      case 'Drive Offers':
+        return const DriveOffersScreen();
+      case 'Drive Requests':
+        return const DriveRequestsScreen();
+      case 'Recharge Requests':
+        return const RechargeRequestsScreen();
+      case 'Notifications':
+        return const NotificationManagerScreen();
+      case 'Home Notice':
+        return const HomeNoticeConfigScreen();
+      case 'App Updates':
+        return const AppUpdatesManagementScreen();
+      case 'App Limits':
+        return const AppLimitsScreen();
+      case 'Subscription':
+        return const SubscriptionScreen();
+      default:
+        return const DashboardScreen();
+    }
   }
 
   /// Navigate to a named section.
   void navigateTo(String section) {
-    final idx = _kAllDestinations.indexWhere((d) => d.section == section);
-    if (idx >= 0) setState(() => _selectedIndex = idx);
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+    }
+    if (section == 'Dashboard' || section == 'Home') {
+      setState(() => _selectedIndex = 0);
+      return;
+    }
+    final dest = _kAllDestinations.firstWhere(
+      (d) => d.section == section || d.label == section,
+      orElse: () => _kAllDestinations.first,
+    );
+    if (dest.section != 'Dashboard') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _getScreenForSection(dest.section),
+        ),
+      );
+    }
   }
 
   int _getBadgeCount(DashboardState dashState, String? key) {
     if (key == null || dashState is! DashboardLoaded) return 0;
     switch (key) {
-      case 'pendingSubscriptions':
-        return dashState.pendingSubscriptions;
-      case 'pendingDeposits':
-        return dashState.pendingDeposits;
       case 'pendingWithdrawals':
         return dashState.pendingWithdrawals;
-      case 'pendingSmmOrders':
-        return dashState.pendingSmmOrders;
     }
     return 0;
   }
@@ -244,7 +240,7 @@ class AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
-        // ── Global user search result listener (moved from DashboardScreen) ──
+        // ── Global user search result listener ──
         BlocListener<UserManagementBloc, UserManagementState>(
           listener: (context, state) {
             if (state is UserSearchFailure) {
@@ -258,7 +254,6 @@ class AdminShellState extends State<AdminShell> {
                   builder: (_) => UserDetailsScreen(initialUser: state.user),
                 ),
               );
-              // Exact same reset call as the old dashboard:
               context.read<UserManagementBloc>().add(ResetSearchEvent());
             }
           },
@@ -374,9 +369,17 @@ class AdminShellState extends State<AdminShell> {
             badgeCount: badge > 0 ? badge : null,
             isExpanded: isExpanded,
             onTap: () {
-              setState(() => _selectedIndex = idx);
-              if (Scaffold.of(context).isDrawerOpen || !isExpanded) {
+              if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
                 Navigator.of(context).pop();
+              }
+              if (dest.section == 'Dashboard') {
+                setState(() => _selectedIndex = 0);
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => _getScreenForSection(dest.section),
+                  ),
+                );
               }
             },
           ),
@@ -480,16 +483,11 @@ class AdminShellState extends State<AdminShell> {
 
   // ── Main content area ──────────────────────────────────────────────────────
   Widget _buildMain(BuildContext context, bool isWide) {
-    final currentDest = _kAllDestinations[_selectedIndex];
-
     return Column(
       children: [
-        _buildTopBar(context, isWide, currentDest.label),
-        Expanded(
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
-          ),
+        _buildTopBar(context, isWide, 'Dashboard'),
+        const Expanded(
+          child: DashboardScreen(),
         ),
       ],
     );
@@ -540,7 +538,6 @@ class AdminShellState extends State<AdminShell> {
 
   // ── Logout dialog ──────────────────────────────────────────────────────────
   void _showLogoutDialog(BuildContext context) {
-    // Exact same Bangla text + AuthBloc.add(LogoutRequested()) as original dashboard:
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

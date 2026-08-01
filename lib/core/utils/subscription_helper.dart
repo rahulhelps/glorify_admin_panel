@@ -1,12 +1,11 @@
 // Central utility for checking user verification status across the admin panel.
 //
 // Supported [subscriptionStatus] values:
-// - `"approved"`  → Legacy verified member (treat as ৳320 Premium Plan)
-// - `"plan_250"`  → New ৳250 Basic Plan member
-// - `"plan_320"`  → New ৳320 Full Premium Plan member
+// - `"approved"`  → Legacy verified member (treat as Plan 320)
+// - `"plan_320"`  → Plan 320 Verified member
 // - `"none"` / null / any other → Unverified
 
-const _kVerifiedStatuses = {'approved', 'plan_250', 'plan_320'};
+const _kVerifiedStatuses = {'approved', 'plan_320'};
 
 /// Returns `true` if the raw [subscriptionStatus] string represents an active,
 /// verified subscription (legacy or new).
@@ -19,13 +18,11 @@ bool isVerifiedStatus(String? status) {
 String planLabel(String? status) {
   switch (status?.toLowerCase().trim()) {
     case 'plan_320':
-      return '৳৩২০ ফুল প্রিমিয়াম প্ল্যান';
-    case 'plan_250':
-      return '৳২৫০ বেসিক প্ল্যান';
+      return 'Verified User (Premium)';
     case 'approved':
-      return '৳৩২০ ফুল প্রিমিয়াম প্ল্যান (Legacy)';
+      return 'Verified User';
     default:
-      return 'Unverified / No Active Plan';
+      return 'Unverified User';
   }
 }
 

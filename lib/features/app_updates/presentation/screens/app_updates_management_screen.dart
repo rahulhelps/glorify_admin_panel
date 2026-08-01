@@ -26,7 +26,7 @@ class _AppUpdatesManagementScreenState extends State<AppUpdatesManagementScreen>
   
   Future<void> _fetchCurrentVersion() async {
     try {
-      final doc = await FirebaseFirestore.instance.doc('app_settings/version_control').get();
+      final doc = await FirebaseFirestore.instance.doc('app_config/version_control').get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         final currentVersion = data['latest_version'] as String?;
@@ -67,7 +67,7 @@ class _AppUpdatesManagementScreenState extends State<AppUpdatesManagementScreen>
       final newUrl = _urlController.text.trim();
       
       await firestore.runTransaction((transaction) async {
-        final docRef = firestore.doc('app_settings/version_control');
+        final docRef = firestore.doc('app_config/version_control');
         final docSnapshot = await transaction.get(docRef);
         
         // Archive current version if it exists
@@ -126,26 +126,33 @@ class _AppUpdatesManagementScreenState extends State<AppUpdatesManagementScreen>
 
   @override
   Widget build(BuildContext context) {
-    // No Scaffold — lives inside AdminShell. All Firestore operations preserved.
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('App Updates')),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
     }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildCurrentUpdateForm(),
-          const SizedBox(height: AppSpacing.xl),
-          const Divider(),
-          const SizedBox(height: AppSpacing.md),
-          const Text(
-            'Old Updates History / পূর্ববর্তী আপডেটসমূহ',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _buildHistoryList(),
-        ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('App Updates')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildCurrentUpdateForm(),
+            const SizedBox(height: AppSpacing.xl),
+            const Divider(),
+            const SizedBox(height: AppSpacing.md),
+            const Text(
+              'Old Updates History / পূর্ববর্তী আপডেটসমূহ',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _buildHistoryList(),
+          ],
+        ),
       ),
     );
   }

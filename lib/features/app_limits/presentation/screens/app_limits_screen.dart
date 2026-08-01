@@ -63,35 +63,41 @@ class _AppLimitsScreenState extends State<AppLimitsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AppLimitsBloc, AppLimitsState>(
-      listener: (context, state) {
-        if (state is AppLimitsUpdateSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('App Limits successfully updated!'), backgroundColor: AppColors.success),
-          );
-        } else if (state is AppLimitsError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state is AppLimitsLoaded) {
-          _populateForm(state.limits);
-        } else if (state is AppLimitsUpdateSuccess) {
-          _populateForm(state.limits);
-        }
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('App Limits'),
+      ),
+      body: BlocConsumer<AppLimitsBloc, AppLimitsState>(
+        listener: (context, state) {
+          if (state is AppLimitsUpdateSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('App Limits successfully updated!'), backgroundColor: AppColors.success),
+            );
+          } else if (state is AppLimitsError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is AppLimitsLoaded) {
+            _populateForm(state.limits);
+          } else if (state is AppLimitsUpdateSuccess) {
+            _populateForm(state.limits);
+          }
 
-        return Column(
-          children: [
-            Expanded(
-              child: state is AppLimitsLoading && state is! AppLimitsUpdateSuccess
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _buildForm(state is AppLimitsLoading),
-            ),
-          ],
-        );
-      },
+          return Column(
+            children: [
+              Expanded(
+                child: state is AppLimitsLoading && state is! AppLimitsUpdateSuccess
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _buildForm(state is AppLimitsLoading),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

@@ -19,7 +19,7 @@ class AppLimitsRepositoryImpl implements AppLimitsRepository {
   Future<Either<Failure, AppLimits>> getAppLimits() async {
     if (await networkInfo.isConnected) {
       try {
-        final doc = await firestore.collection('app_settings').doc('app_limits').get();
+        final doc = await firestore.collection('app_config').doc('app_limits').get();
         if (doc.exists && doc.data() != null) {
           return Right(AppLimits.fromMap(doc.data()!));
         } else {
@@ -43,7 +43,7 @@ class AppLimitsRepositoryImpl implements AppLimitsRepository {
   Future<Either<Failure, void>> updateAppLimits(AppLimits limits) async {
     if (await networkInfo.isConnected) {
       try {
-        await firestore.collection('app_settings').doc('app_limits').set(
+        await firestore.collection('app_config').doc('app_limits').set(
               limits.toMap(),
               SetOptions(merge: true),
             );

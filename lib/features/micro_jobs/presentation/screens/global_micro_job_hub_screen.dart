@@ -82,60 +82,65 @@ class _GlobalMicroJobHubScreenState extends State<GlobalMicroJobHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // No Scaffold — lives inside AdminShell. All Firestore operations preserved.
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          // Search bar
-          Container(
-            color: AppColors.surface,
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-            child: TextFormField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search user by Email, Phone, or Refer Code...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Micro Jobs'),
+      ),
+      body: DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            // Search bar
+            Container(
+              color: AppColors.surface,
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              child: TextFormField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Search user by Email, Phone, or Refer Code...',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                ),
+                onChanged: (_) => setState(() {}),
+                onFieldSubmitted: (_) => _performSearch(),
               ),
-              onChanged: (_) => setState(() {}),
-              onFieldSubmitted: (_) => _performSearch(),
             ),
-          ),
-          // Tab bar
-          Container(
-            color: AppColors.surface,
-            child: const TabBar(
-              tabs: [
-                Tab(text: 'Micro Job Posts'),
-                Tab(text: 'Micro Job Submissions'),
-              ],
+            // Tab bar
+            Container(
+              color: AppColors.surface,
+              child: const TabBar(
+                tabs: [
+                  Tab(text: 'Micro Job Posts'),
+                  Tab(text: 'Micro Job Submissions'),
+                ],
+              ),
             ),
-          ),
-          // Tab view
-          Expanded(
-            child: TabBarView(
-              children: [
-                MicroJobPostsTab(
-                  searchedUid: _searchedUid,
-                  isSearchingUser: _isSearchingUser,
-                  userNotFound: _userNotFound,
-                  onSearch: _performSearch,
-                ),
-                MicroJobSubmissionsTab(
-                  searchedUid: _searchedUid,
-                  isSearchingUser: _isSearchingUser,
-                  userNotFound: _userNotFound,
-                ),
-              ],
+            // Tab view
+            Expanded(
+              child: TabBarView(
+                children: [
+                  MicroJobPostsTab(
+                    searchedUid: _searchedUid,
+                    isSearchingUser: _isSearchingUser,
+                    userNotFound: _userNotFound,
+                    onSearch: _performSearch,
+                  ),
+                  MicroJobSubmissionsTab(
+                    searchedUid: _searchedUid,
+                    isSearchingUser: _isSearchingUser,
+                    userNotFound: _userNotFound,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -190,7 +195,6 @@ class MicroJobPostsTab extends StatelessWidget {
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;
-            final jobId = doc.id;
             
             final jobName = data['jobName'] ?? 'No Title';
             final postedBy = data['postedBy'] ?? 'Unknown';
@@ -274,7 +278,7 @@ class MicroJobPostsTab extends StatelessWidget {
         return Colors.green;
       case 'pending':
         return Colors.orange;
-      case 'inactive':
+      case 'paused':
       case 'rejected':
         return Colors.red;
       default:
@@ -328,10 +332,10 @@ class MicroJobPostsTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: ['active', 'inactive', 'pending'].contains(currentStatus) ? currentStatus : 'pending',
+                      value: ['active', 'paused', 'pending'].contains(currentStatus) ? currentStatus : 'pending',
                       items: const [
                         DropdownMenuItem(value: 'active', child: Text('Active')),
-                        DropdownMenuItem(value: 'inactive', child: Text('Inactive')),
+                        DropdownMenuItem(value: 'paused', child: Text('Paused')),
                         DropdownMenuItem(value: 'pending', child: Text('Pending')),
                       ],
                       onChanged: (val) {

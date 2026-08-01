@@ -9,21 +9,25 @@ import 'core/presentation/widgets/admin_shell.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'features/deposit/presentation/bloc/deposit_bloc.dart';
 import 'features/withdrawal/presentation/bloc/withdrawal_bloc.dart';
 import 'features/dashboard/presentation/bloc/dashboard_bloc.dart';
 import 'features/users/presentation/bloc/user_management_bloc.dart';
-import 'features/smm_orders/presentation/bloc/smm_order_bloc.dart';
-import 'features/smm_notices/presentation/bloc/smm_notice_bloc.dart';
-import 'features/ads_views/presentation/bloc/ads_view_bloc.dart';
 import 'features/app_limits/presentation/bloc/app_limits_bloc.dart';
+import 'features/drive_offers/presentation/bloc/drive_offer_bloc.dart';
+import 'features/drive_requests/presentation/bloc/drive_request_bloc.dart';
+import 'features/recharge_requests/presentation/bloc/recharge_request_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      // Firebase already initialized (hot restart) — safe to ignore
+    } else {
+      rethrow;
+    }
+  }
   await di.init();
   runApp(const MyApp());
 }
@@ -38,18 +42,16 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (_) => di.sl<AuthBloc>()..add(CheckAuthRequested()),
         ),
-        BlocProvider(create: (_) => di.sl<SubscriptionBloc>()),
-        BlocProvider(create: (_) => di.sl<DepositBloc>()),
         BlocProvider(create: (_) => di.sl<WithdrawalBloc>()),
         BlocProvider(create: (_) => di.sl<DashboardBloc>()),
         BlocProvider(create: (_) => di.sl<UserManagementBloc>()),
-        BlocProvider(create: (_) => di.sl<SmmOrderBloc>()),
-        BlocProvider(create: (_) => di.sl<SmmNoticeBloc>()),
-        BlocProvider(create: (_) => di.sl<AdsViewBloc>()),
         BlocProvider(create: (_) => di.sl<AppLimitsBloc>()),
+        BlocProvider(create: (_) => di.sl<DriveOfferBloc>()),
+        BlocProvider(create: (_) => di.sl<DriveRequestBloc>()),
+        BlocProvider(create: (_) => di.sl<RechargeRequestBloc>()),
       ],
       child: MaterialApp(
-        title: 'Golden Power Admin panel',
+        title: 'Glorify Admin',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AuthWrapper(),

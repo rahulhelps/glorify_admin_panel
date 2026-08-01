@@ -39,67 +39,73 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Tab bar ──────────────────────────────────────────────────────────
-        Container(
-          color: AppColors.surface,
-          child: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Pending'),
-              Tab(text: 'Approved'),
-              Tab(text: 'Rejected'),
-            ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Withdrawals'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Tab bar ──────────────────────────────────────────────────────────
+          Container(
+            color: AppColors.surface,
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Pending'),
+                Tab(text: 'Approved'),
+                Tab(text: 'Rejected'),
+              ],
+            ),
           ),
-        ),
-        // ── Content ──────────────────────────────────────────────────────────
-        Expanded(
-          child: BlocConsumer<WithdrawalBloc, WithdrawalState>(
-            listener: (context, state) {
-              if (state is WithdrawalActionSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Action successful'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-                context.read<WithdrawalBloc>().add(LoadWithdrawals()); // ✅ preserved
-              } else if (state is WithdrawalActionError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-                );
-              }
-            },
-            buildWhen: (prev, curr) =>
-                curr is WithdrawalLoading ||
-                curr is WithdrawalLoaded ||
-                curr is WithdrawalError,
-            builder: (context, state) {
-              if (state is WithdrawalLoading) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-              } else if (state is WithdrawalLoaded) {
-                final all = state.withdrawals;
-                final pending = all.where((w) => w.status == 'pending').toList();
-                final approved = all.where((w) => w.status == 'approved').toList();
-                final rejected = all.where((w) => w.status == 'rejected').toList();
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildList(pending, isPending: true),
-                    _buildList(approved, isPending: false),
-                    _buildList(rejected, isPending: false),
-                  ],
-                );
-              } else if (state is WithdrawalError) {
-                return Center(child: Text('Error: ${state.message}'));
-              }
-              return const SizedBox();
-            },
+          // ── Content ──────────────────────────────────────────────────────────
+          Expanded(
+            child: BlocConsumer<WithdrawalBloc, WithdrawalState>(
+              listener: (context, state) {
+                if (state is WithdrawalActionSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Action successful'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  context.read<WithdrawalBloc>().add(LoadWithdrawals()); // ✅ preserved
+                } else if (state is WithdrawalActionError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+                  );
+                }
+              },
+              buildWhen: (prev, curr) =>
+                  curr is WithdrawalLoading ||
+                  curr is WithdrawalLoaded ||
+                  curr is WithdrawalError,
+              builder: (context, state) {
+                if (state is WithdrawalLoading) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                } else if (state is WithdrawalLoaded) {
+                  final all = state.withdrawals;
+                  final pending = all.where((w) => w.status == 'pending').toList();
+                  final approved = all.where((w) => w.status == 'approved').toList();
+                  final rejected = all.where((w) => w.status == 'rejected').toList();
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildList(pending, isPending: true),
+                      _buildList(approved, isPending: false),
+                      _buildList(rejected, isPending: false),
+                    ],
+                  );
+                } else if (state is WithdrawalError) {
+                  return Center(child: Text('Error: ${state.message}'));
+                }
+                return const SizedBox();
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
