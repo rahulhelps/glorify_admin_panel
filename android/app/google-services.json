@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "233059619721",
+    "firebase_url": "https://life-change-78727-default-rtdb.firebaseio.com",
+    "project_id": "life-change-78727",
+    "storage_bucket": "life-change-78727.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:233059619721:android:8521112a1f4efb20e24758",
+        "android_client_info": {
+          "package_name": "com.example.life_change"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg23MwwrkXto2fpJnPJlFSFjk8wf8LNoU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:233059619721:android:8d809c5fc7edc634e24758",
+        "android_client_info": {
+          "package_name": "com.example.life_chnage_admin_panel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg23MwwrkXto2fpJnPJlFSFjk8wf8LNoU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
