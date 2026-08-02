@@ -21,6 +21,9 @@ import '../../../features/home_notice/presentation/screens/home_notice_config_sc
 import '../../../features/app_updates/presentation/screens/app_updates_management_screen.dart';
 import '../../../features/app_limits/presentation/screens/app_limits_screen.dart';
 import '../../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../../../features/transactions/presentation/screens/all_transactions_screen.dart';
+import '../../../features/cloudinary_config/presentation/screens/cloudinary_config_screen.dart';
+import '../../../features/home_banner/presentation/screens/home_banner_screen.dart';
 
 import '../../theme/app_theme.dart';
 import 'admin_nav_item.dart';
@@ -72,6 +75,12 @@ const _kSections = <String, List<_NavDestination>>{
   ],
   'Finance': [
     _NavDestination(
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long,
+      label: 'All Transactions',
+      section: 'All Transactions',
+    ),
+    _NavDestination(
       icon: Icons.money_off_outlined,
       activeIcon: Icons.money_off,
       label: 'Withdrawals',
@@ -80,6 +89,12 @@ const _kSections = <String, List<_NavDestination>>{
     ),
   ],
   'Content': [
+    _NavDestination(
+      icon: Icons.view_carousel_outlined,
+      activeIcon: Icons.view_carousel,
+      label: 'Home Banners',
+      section: 'Home Banners',
+    ),
     _NavDestination(
       icon: Icons.work_history_outlined,
       activeIcon: Icons.work_history_rounded,
@@ -140,6 +155,12 @@ const _kSections = <String, List<_NavDestination>>{
       label: 'Subscription',
       section: 'Subscription',
     ),
+    _NavDestination(
+      icon: Icons.cloud_sync_outlined,
+      activeIcon: Icons.cloud_sync,
+      label: 'Cloudinary Config',
+      section: 'Cloudinary Config',
+    ),
   ],
 };
 
@@ -180,8 +201,12 @@ class AdminShellState extends State<AdminShell> {
         return const PremiumVerificationScreen();
       case 'Refer Checker':
         return const ReferCheckerScreen();
+      case 'All Transactions':
+        return const AllTransactionsScreen();
       case 'Withdrawals':
         return const WithdrawalScreen();
+      case 'Home Banners':
+        return const HomeBannerScreen();
       case 'Micro Jobs':
         return const GlobalMicroJobHubScreen();
       case 'Drive Offers':
@@ -200,6 +225,8 @@ class AdminShellState extends State<AdminShell> {
         return const AppLimitsScreen();
       case 'Subscription':
         return const SubscriptionScreen();
+      case 'Cloudinary Config':
+        return const CloudinaryConfigScreen();
       default:
         return const DashboardScreen();
     }

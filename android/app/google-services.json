@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "588581006613",
-    "project_id": "globalearn-60f19",
-    "storage_bucket": "globalearn-60f19.firebasestorage.app"
+    "project_number": "281645823313",
+    "project_id": "glorifybussness",
+    "storage_bucket": "glorifybussness.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:588581006613:android:20e7031ef5e1e995b68d1c",
+        "mobilesdk_app_id": "1:281645823313:android:b714471e041c4c584ecf70",
         "android_client_info": {
           "package_name": "com.globalearn.admin"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCc0VCoyJcM7tyNcPCR9bQlwwaI_k_nvtc"
+          "current_key": "AIzaSyAmVZ6vIFkXQHPeihhbqn4uTuH8KBidm-A"
         }
       ],
       "services": {
@@ -26,7 +26,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:588581006613:android:0aef65e342304847b68d1c",
+        "mobilesdk_app_id": "1:281645823313:android:088db494dd6b4a4e4ecf70",
         "android_client_info": {
           "package_name": "com.globalearn.app"
         }
@@ -34,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCc0VCoyJcM7tyNcPCR9bQlwwaI_k_nvtc"
+          "current_key": "AIzaSyAmVZ6vIFkXQHPeihhbqn4uTuH8KBidm-A"
         }
       ],
       "services": {
