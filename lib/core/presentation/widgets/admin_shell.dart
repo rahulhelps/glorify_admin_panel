@@ -357,7 +357,7 @@ class AdminShellState extends State<AdminShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Golden Power',
+                  'Glorify Digital',
                   style: GoogleFonts.inter(
                     color: AppColors.textPrimary,
                     fontSize: 14,
@@ -475,7 +475,7 @@ class AdminShellState extends State<AdminShell> {
                       child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 24),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Golden Power Admin', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('Glorify Digital Admin', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
                     Text('Management Panel', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12)),
                   ],
                 ),

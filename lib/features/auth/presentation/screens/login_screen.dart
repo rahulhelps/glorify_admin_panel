@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Icon(Icons.admin_panel_settings, size: 80, color: Color(0xFF00CED1)),
                     const SizedBox(height: 16),
-                    const Text('Golden Power Admin', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const Text('Glorify Digital Admin', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _emailCtrl,

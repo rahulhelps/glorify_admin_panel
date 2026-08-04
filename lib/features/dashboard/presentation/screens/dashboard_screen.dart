@@ -106,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Here\'s what\'s happening with Golden Power today.',
+                  'Here\'s what\'s happening with Glorify Digital today.',
                   style: GoogleFonts.inter(
                     color: Colors.white70,
                     fontSize: 13,

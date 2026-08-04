@@ -175,11 +175,14 @@ class _HomeBannerScreenState extends State<HomeBannerScreen> {
           children: [
             const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 24),
             const SizedBox(width: 8),
-            Text('Delete Banner', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+            Text(
+              'Delete Banner',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
           ],
         ),
         content: const Text(
-          'Are you sure you want to remove this banner from the active home slider? This action cannot be undone.',
+          'Are you sure you want to delete this banner?',
           style: TextStyle(fontSize: 13),
         ),
         actions: [
@@ -207,11 +210,11 @@ class _HomeBannerScreenState extends State<HomeBannerScreen> {
       });
 
       if (mounted) {
-        _showSnackBar('Banner removed successfully.');
+        _showSnackBar('Banner deleted successfully.');
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('Failed to remove banner: $e', isError: true);
+        _showSnackBar('Failed to delete banner: $e', isError: true);
       }
     }
   }
@@ -563,7 +566,7 @@ class _BannerCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Image Display ──────────────────────────────────────────────────
+          // ── 1. Image Display ───────────────────────────────────────────────
           Image.network(
             imageUrl,
             fit: BoxFit.cover,
@@ -593,95 +596,111 @@ class _BannerCard extends StatelessWidget {
             },
           ),
 
-          // ── Gradient Overlay on Top & Bottom for controls ──────────────────
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.5),
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.6),
-                  ],
-                  stops: const [0.0, 0.25, 0.7, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Index Badge (Top Left) ─────────────────────────────────────────
-          Positioned(
-            top: 10,
-            left: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: AppRadius.smAll,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                'Slide #$index',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-
-          // ── Action Buttons (Top Right: Delete & Copy) ───────────────────────
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Row(
-              children: [
-                // Copy URL button
-                IconButton(
-                  icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
-                  tooltip: 'Copy Image URL',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.5),
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: imageUrl));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Banner URL copied to clipboard'),
-                        duration: Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 4),
-
-                // Delete button
-                IconButton(
-                  icon: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 18),
-                  tooltip: 'Delete Banner',
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.error.withValues(alpha: 0.85),
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Tap to View Fullscreen (Center Icon) ────────────────────────────
+          // ── 2. Tap to View Fullscreen (Background ink) ─────────────────────
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => _openFullScreenPreview(context, imageUrl),
               ),
+            ),
+          ),
+
+          // ── 3. Gradient Overlay on Top & Bottom (Ignore Pointer) ───────────
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.55),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.6),
+                    ],
+                    stops: const [0.0, 0.3, 0.7, 1.0],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── 4. Index Badge (Top Left) ──────────────────────────────────────
+          Positioned(
+            top: 10,
+            left: 10,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: AppRadius.smAll,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Slide #$index',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── 5. Action Buttons (Top Right: Copy & Prominent Delete) ──────────
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Copy URL button
+                Material(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: imageUrl));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Banner URL copied to clipboard'),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(Icons.copy_rounded, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Prominent Delete button (Red circular background)
+                Material(
+                  color: AppColors.error,
+                  elevation: 2,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onDelete,
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

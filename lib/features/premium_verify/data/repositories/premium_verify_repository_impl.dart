@@ -11,26 +11,41 @@ class PremiumVerifyRepositoryImpl implements PremiumVerifyRepository {
 
   PremiumVerifyRepositoryImpl({required this.db, required this.networkInfo});
 
-  static const Map<String, Map<int, double>> generationCharts = {
-    'plan_320': {
-      1: 100, 2: 45, 3: 25, 4: 15, 5: 10,
-      6: 5, 7: 4, 8: 3, 9: 2, 10: 2,
-    },
-  };
-
   Future<void> _distributeReferralBonus(String uid, String planType) async {
     final userDoc = await db.collection('users').doc(uid).get();
+    final userData = userDoc.data();
 
-    if (userDoc.data()!['bonusDistributed'] == true) {
-      debugPrint('⚠️ Bonus already distributed for $uid');
+    if (userData == null || userData['bonusDistributed'] == true) {
+      debugPrint('⚠️ Bonus already distributed or user not found for $uid');
       return;
     }
 
-    String? currentReferCode = userDoc.data()?['referredBy'];
+    // 1. Fetch real-time config from Firestore
+    final configDoc = await db.collection('app_config').doc('subscription').get();
+    final configData = configDoc.data();
+
+    // 2. Safely extract the referral map
+    final planData = configData != null && configData['plan320'] is Map
+        ? configData['plan320'] as Map<String, dynamic>
+        : null;
+    final referralMap = planData != null && planData['referral'] is Map
+        ? planData['referral'] as Map<String, dynamic>
+        : null;
+
+    // 3. Parse string values into double with safe fallbacks (0.0)
+    final Map<int, double> chart = {};
+    for (int i = 1; i <= 10; i++) {
+      final rawValue = referralMap?['gen$i'];
+      if (rawValue != null) {
+        chart[i] = double.tryParse(rawValue.toString().trim()) ?? 0.0;
+      } else {
+        chart[i] = 0.0;
+      }
+    }
+
+    String? currentReferCode = userData['referredBy'];
     final batch = db.batch();
     int level = 1;
-
-    final chart = generationCharts[planType] ?? generationCharts['plan_320']!;
 
     while (currentReferCode != null &&
            currentReferCode.isNotEmpty &&
@@ -56,7 +71,7 @@ class PremiumVerifyRepositoryImpl implements PremiumVerifyRepository {
           'amount': bonus,
           'type': 'generation_commission',
           'fromUid': uid,
-          'fromName': userDoc.data()?['name'] ?? '',
+          'fromName': userData['name'] ?? '',
           'level': level,
           'description': '$level নং জেনারেশন রেফার কমিশন (৳৩২০ প্ল্যান)',
           'createdAt': FieldValue.serverTimestamp(),
